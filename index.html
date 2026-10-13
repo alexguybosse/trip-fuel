@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Trip Fuel Cost</title>
-<meta name="description" content="Work out what a road trip will cost in fuel at today's South African pump price.">
+<meta name="description" content="Work out what a road trip will cost to drive at today's South African pump price.">
 <meta name="theme-color" content="#0c6a3c">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Trip Fuel">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230c6a3c'/%3E%3Ctext x='32' y='44' font-family='Arial' font-weight='700' font-size='30' fill='%23fff' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap">
@@ -25,10 +28,13 @@
     </div>
   </div>
 </nav>
+
+<div class="offline" id="offline" hidden>No internet right now. Address search and routes are paused — you can still type a distance and work out the cost.</div>
+
 <div class="wrap">
   <header>
     <h1>Trip Fuel Cost</h1>
-    <p class="sub">Type where you're starting and where you're going, pick the car, and it works out the fuel cost at today's pump price.</p>
+    <p class="sub">Type where you're starting and where you're going, pick the vehicle, and it works out what the trip costs to drive.</p>
   </header>
 
   <section class="board" aria-label="Pump prices">
@@ -46,18 +52,31 @@
   <section class="group" aria-labelledby="h-trip">
     <h2 class="group-h" id="h-trip">The trip</h2>
 
+    <div class="places" id="place-chips" hidden></div>
+
     <div class="addr" id="addr-from">
-      <span class="addr-label"><span class="tag">A</span>From</span>
+      <div class="addr-label"><span class="tag">A</span>From
+        <button type="button" class="star" id="star-from" aria-label="Save this place" hidden></button>
+      </div>
       <div class="addr-line">
         <input type="search" id="from" placeholder="Street address, suburb or town" autocomplete="off" enterkeyhint="search" aria-autocomplete="list" aria-controls="sugg-from">
-        <button type="button" class="gps" id="gps">My location</button>
+        <button type="button" class="gps" id="gps" aria-label="Use my current location">My location</button>
       </div>
       <ul class="sugg" id="sugg-from" role="listbox" hidden></ul>
       <div class="found" id="found-from"></div>
     </div>
 
+    <div class="swapline">
+      <button type="button" class="swap" id="swap" aria-label="Swap start and destination">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v14M7 18l-3-3M7 18l3-3M17 20V6M17 6l-3 3M17 6l3 3"/></svg>
+        Swap
+      </button>
+    </div>
+
     <div class="addr" id="addr-to">
-      <span class="addr-label"><span class="tag">B</span>To</span>
+      <div class="addr-label"><span class="tag">B</span>To
+        <button type="button" class="star" id="star-to" aria-label="Save this place" hidden></button>
+      </div>
       <input type="search" id="to" placeholder="Street address, suburb or town" autocomplete="off" enterkeyhint="search" aria-autocomplete="list" aria-controls="sugg-to">
       <ul class="sugg" id="sugg-to" role="listbox" hidden></ul>
       <div class="found" id="found-to"></div>
@@ -77,32 +96,82 @@
   </section>
 
   <section class="group" aria-labelledby="h-car">
-    <h2 class="group-h" id="h-car">The car</h2>
-    <div class="row">
-      <label class="f">Make
-        <select id="make"></select>
-      </label>
-      <label class="f">Model
-        <select id="model"></select>
-      </label>
-    </div>
-    <label class="f" id="other-wrap" hidden>Which car? (for your reference)
-      <input type="text" id="other-q" placeholder="e.g. Toyota Corolla 1.6 2012" autocomplete="off">
+    <h2 class="group-h" id="h-car">The vehicle</h2>
+
+    <label class="f">Vehicle
+      <select id="veh"></select>
     </label>
-    <div class="row">
-      <label class="f">Fuel use
-        <span class="unit"><input type="number" id="l100" inputmode="decimal" step="0.1" min="2" max="30"><span>l/100 km</span></span>
+    <div class="vehcard" id="vehcard" hidden></div>
+
+    <div class="vehform" id="vehform" hidden>
+      <div class="vehform-h"><strong id="vehform-title">Add a vehicle</strong>
+        <button type="button" class="closex small" id="v-cancel" aria-label="Cancel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <label class="f">What do you call it?
+        <input type="text" id="v-name" maxlength="60" placeholder="e.g. White Hilux" autocomplete="off">
       </label>
-      <label class="f">Fuel
-        <select id="grade">
-          <option value="93">Petrol 93</option>
-          <option value="95">Petrol 95</option>
-          <option value="d50">Diesel 50ppm</option>
-          <option value="d500">Diesel 500ppm</option>
-        </select>
+      <div class="row">
+        <label class="f">Make
+          <select id="v-make"></select>
+        </label>
+        <label class="f">Model
+          <select id="v-model"></select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="f">Fuel use
+          <span class="unit"><input type="number" id="v-l100" inputmode="decimal" step="0.1" min="2" max="40"><span>l/100 km</span></span>
+        </label>
+        <label class="f">Fuel
+          <select id="v-grade">
+            <option value="93">Petrol 93</option>
+            <option value="95">Petrol 95</option>
+            <option value="d50">Diesel 50ppm</option>
+            <option value="d500">Diesel 500ppm</option>
+          </select>
+        </label>
+      </div>
+      <p class="note" id="v-warn" hidden></p>
+      <label class="f">Running cost (service, tyres, wear)
+        <span class="unit"><input type="number" id="v-run" inputmode="decimal" step="0.05" min="0" max="50" placeholder="0"><span>R / km</span></span>
       </label>
+      <details class="helper" id="run-helper">
+        <summary>Work it out from service and tyre costs</summary>
+        <div class="helper-in">
+          <div class="row">
+            <label class="f">A service costs
+              <span class="unit"><input type="number" id="hc-serv" inputmode="decimal" min="0" step="100"><span>R</span></span>
+            </label>
+            <label class="f">Every
+              <span class="unit"><input type="number" id="hc-servkm" inputmode="numeric" min="1" step="1000" placeholder="15000"><span>km</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="f">A set of tyres
+              <span class="unit"><input type="number" id="hc-tyre" inputmode="decimal" min="0" step="500"><span>R</span></span>
+            </label>
+            <label class="f">Lasts
+              <span class="unit"><input type="number" id="hc-tyrekm" inputmode="numeric" min="1" step="5000" placeholder="50000"><span>km</span></span>
+            </label>
+          </div>
+          <label class="f">Anything else per year (licence, insurance, repairs)
+            <div class="row">
+              <span class="unit"><input type="number" id="hc-year" inputmode="decimal" min="0" step="500" placeholder="0"><span>R / yr</span></span>
+              <span class="unit"><input type="number" id="hc-yearkm" inputmode="numeric" min="1" step="5000" placeholder="25000"><span>km / yr</span></span>
+            </div>
+          </label>
+          <div class="helper-out" id="hc-out">Fill these in and it works out the rand per kilometre.</div>
+          <button type="button" class="btn quiet" id="hc-use">Use this figure</button>
+        </div>
+      </details>
+      <div class="vehform-actions">
+        <button type="button" class="btn" id="v-save">Save vehicle</button>
+        <button type="button" class="btn danger" id="v-delete" hidden>Delete</button>
+      </div>
     </div>
-    <p class="carinfo" id="carinfo"></p>
+
     <label class="f">Price per litre
       <span class="unit"><input type="number" id="price" inputmode="decimal" step="0.01" min="0"><span>R / l</span></span>
     </label>
@@ -118,19 +187,18 @@
       <h2 id="h-approve">Approve this trip</h2>
       <span>Saves it to Past trips with a map snapshot</span>
     </div>
-    <div class="row3">
+    <div class="row">
       <label class="f">Trip name
         <input type="text" id="trip-name" autocomplete="off" maxlength="80">
-      </label>
-      <label class="f">Vehicle
-        <input type="text" id="trip-vehicle" list="vehicles-list" autocomplete="off" maxlength="60" placeholder="e.g. White Hilux">
       </label>
       <label class="f">Driver (optional)
         <input type="text" id="trip-driver" list="drivers-list" autocomplete="off" maxlength="60" placeholder="Name">
       </label>
     </div>
-    <datalist id="vehicles-list"></datalist>
     <datalist id="drivers-list"></datalist>
+    <label class="f">Note (optional)
+      <input type="text" id="trip-note" autocomplete="off" maxlength="120" placeholder="e.g. Delivery for Johnson's">
+    </label>
     <button type="button" class="btn big" id="approve-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
       Approve &amp; save trip
@@ -138,572 +206,13 @@
     <div class="saved-line" id="saved-line" hidden></div>
   </section>
 
-  <p class="note">Fuel use figures are typical real-world numbers. If you know what your car actually does, type it in. Prices change on the first Wednesday of each month and update here automatically. Tolls are not included.</p>
+  <p class="note">Fuel figures are typical real-world numbers. If you know what the vehicle actually does, type it in. Prices change on the first Wednesday of each month and update here on their own. Tolls are not included.</p>
   <p class="credit">Addresses and routes from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, via Photon and OSRM.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="store.js"></script>
-<script>
-(function(){
-  // Fallback prices if prices.json can't be loaded (kept in step with prices.json)
-  let P = {
-    effective:"2026-10-07", effective_label:"7 October 2026",
-    inland:{"93":29.88,"95":30.25,"d50":33.29,"d500":31.95},
-    coastal:{"93":29.09,"95":29.38,"d50":32.03,"d500":31.08}
-  };
-  const GRADES = {"93":"Petrol 93","95":"Petrol 95","d50":"Diesel 50ppm","d500":"Diesel 500ppm"};
-  const SHORT = {"93":"93","95":"95","d50":"D 50","d500":"D 500"};
-
-  // [make, model, fuel, typical real-world l/100km]
-  const CARS = [
-    ["Toyota","Hilux 2.4 GD-6","diesel",8.4],["Toyota","Hilux 2.8 GD-6","diesel",9.0],["Toyota","Hilux 2.7 VVTi","petrol",11.5],
-    ["Toyota","Fortuner 2.4 GD-6","diesel",8.6],["Toyota","Fortuner 2.8 GD-6","diesel",9.3],
-    ["Toyota","Corolla Cross 1.8","petrol",7.2],["Toyota","Corolla Cross 1.8 Hybrid","petrol",5.0],
-    ["Toyota","Corolla 1.8 / 2.0","petrol",7.0],["Toyota","Starlet 1.5","petrol",5.8],["Toyota","Vitz 1.0","petrol",5.2],
-    ["Toyota","Urban Cruiser 1.5","petrol",6.4],["Toyota","RAV4 2.0","petrol",8.0],
-    ["Toyota","Land Cruiser Prado 2.8 GD","diesel",9.8],["Toyota","Land Cruiser 79 4.5 V8","diesel",13.0],
-    ["Toyota","Hiace / Quantum 2.5 D-4D","diesel",10.0],["Toyota","Hiace / Quantum 2.7 petrol","petrol",12.5],
-    ["Volkswagen","Polo Vivo 1.4","petrol",6.4],["Volkswagen","Polo 1.0 TSI","petrol",5.8],["Volkswagen","Polo GTI 2.0 TSI","petrol",7.2],
-    ["Volkswagen","Golf 1.4 TSI","petrol",6.4],["Volkswagen","Golf GTI 2.0 TSI","petrol",7.8],["Volkswagen","T-Cross 1.0 TSI","petrol",6.2],
-    ["Volkswagen","Tiguan 1.4 TSI","petrol",7.8],["Volkswagen","Tiguan 2.0 TDI","diesel",6.8],
-    ["Volkswagen","Amarok 2.0 BiTDI","diesel",9.0],["Volkswagen","Amarok 3.0 V6 TDI","diesel",10.2],
-    ["Ford","Ranger 2.2 TDCi","diesel",8.6],["Ford","Ranger 2.0 SiT","diesel",8.8],["Ford","Ranger 2.0 BiT","diesel",9.3],["Ford","Ranger 3.0 V6","diesel",10.3],
-    ["Ford","Everest 2.0 BiT","diesel",9.6],["Ford","EcoSport 1.0 EcoBoost","petrol",6.8],["Ford","Figo 1.5","petrol",6.4],
-    ["Isuzu","D-Max 1.9 Ddi","diesel",8.0],["Isuzu","D-Max 3.0 Ddi","diesel",9.2],["Isuzu","mu-X 3.0","diesel",9.5],
-    ["Nissan","Navara 2.5 dCi","diesel",9.2],["Nissan","NP200 1.6","petrol",7.2],["Nissan","Magnite 1.0 Turbo","petrol",6.2],
-    ["Nissan","X-Trail 2.5","petrol",8.8],["Nissan","Almera 1.5","petrol",6.6],
-    ["Suzuki","Swift 1.2","petrol",5.2],["Suzuki","Dzire 1.2","petrol",5.2],["Suzuki","Baleno 1.5","petrol",5.8],
-    ["Suzuki","Ertiga 1.5","petrol",6.6],["Suzuki","Fronx 1.5","petrol",6.2],["Suzuki","Jimny 1.5","petrol",7.8],["Suzuki","Grand Vitara 1.5","petrol",6.6],
-    ["Hyundai","Grand i10 1.0","petrol",5.6],["Hyundai","i20 1.2","petrol",6.0],["Hyundai","Venue 1.0T","petrol",6.6],
-    ["Hyundai","Creta 1.5","petrol",7.2],["Hyundai","Tucson 2.0","petrol",8.8],["Hyundai","Tucson 2.0 CRDi","diesel",7.0],["Hyundai","H-100 2.6 D","diesel",9.8],
-    ["Kia","Picanto 1.0","petrol",5.2],["Kia","Sonet 1.5","petrol",6.6],["Kia","Seltos 1.5","petrol",7.0],["Kia","Sportage 2.0","petrol",8.6],
-    ["Renault","Kwid 1.0","petrol",5.0],["Renault","Kiger 1.0 Turbo","petrol",6.0],["Renault","Triber 1.0","petrol",5.8],["Renault","Duster 1.5 dCi","diesel",5.6],
-    ["Haval","Jolion 1.5T","petrol",8.0],["Haval","H6 2.0T","petrol",9.2],["GWM","P-Series 2.0 TD","diesel",9.2],["GWM","Steed 5 2.0 VGT","diesel",8.8],
-    ["Chery","Tiggo 4 Pro 1.5","petrol",7.6],["Chery","Tiggo 7 Pro 1.5T","petrol",8.2],["Chery","Tiggo 8 Pro 1.6T","petrol",8.8],
-    ["Mahindra","Pik Up 2.2 mHawk","diesel",9.2],["Mahindra","Scorpio-N 2.2","diesel",8.8],["Mahindra","XUV300 1.2T","petrol",6.8],
-    ["Mazda","CX-5 2.0","petrol",8.0],["Mazda","Mazda2 1.5","petrol",5.8],["Mazda","BT-50 3.0","diesel",9.0],
-    ["Honda","Jazz / Fit 1.5","petrol",5.8],["Honda","CR-V 1.5T","petrol",7.8],["Honda","Amaze 1.2","petrol",5.8],
-    ["BMW","3 Series 320i","petrol",7.2],["BMW","3 Series 320d","diesel",5.6],["BMW","X3 xDrive20d","diesel",6.8],["BMW","X5 xDrive30d","diesel",8.0],
-    ["Mercedes-Benz","C200","petrol",7.2],["Mercedes-Benz","C220d","diesel",5.6],["Mercedes-Benz","GLC 220d","diesel",6.8],
-    ["Audi","A3 1.4 TFSI","petrol",6.4],["Audi","Q5 2.0 TDI","diesel",7.0],
-    ["Land Rover","Defender 110 D300","diesel",9.5],["Land Rover","Discovery Sport D200","diesel",7.5],
-    ["Opel","Corsa 1.2T","petrol",5.8],["Datsun","Go 1.2","petrol",5.6],["Jeep","Wrangler 3.6","petrol",12.5]
-  ];
-  const OTHER = "__other";
-
-  const $ = id => document.getElementById(id);
-  const el = { make:$("make"), model:$("model"), l100:$("l100"), grade:$("grade"), km:$("km"),
-    ret:$("ret"), load:$("load"), price:$("price"), result:$("result"), prices:$("prices") };
-
-  const state = { region:"coastal", priceCustom:false, carLabel:"", kmSource:"",
-    pts:{ from:null, to:null } };  // pts: {lat, lon, label}
-
-  // ---------- per-viewer memory ----------
-  const KEY = "trip-fuel-v2";
-  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){ return null; } }
-  function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({
-      region:state.region, make:el.make.value, model:el.model.value, l100:el.l100.value, grade:el.grade.value,
-      pts:state.pts, fromText:$("from").value, toText:$("to").value, km:el.km.value,
-      ret:el.ret.checked, load:el.load.checked, other:$("other-q").value, carLabel:state.carLabel
-    })); }catch(e){}
-  }
-
-  // ---------- helpers ----------
-  function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-  function num(v,d){ const n = Number(v); return isFinite(n) ? n.toLocaleString("en-ZA",{minimumFractionDigits:d,maximumFractionDigits:d}) : "–"; }
-  function money(v){ return Math.round(v).toLocaleString("en-ZA"); }
-  function hm(sec){ const m = Math.round(sec/60), h = Math.floor(m/60); return h ? h + " h " + String(m%60).padStart(2,"0") + " min" : m + " min"; }
-
-  // ---------- price board ----------
-  function boardPrice(g){ return P[state.region][g]; }
-  function renderBoard(){
-    el.prices.innerHTML = "";
-    Object.keys(GRADES).forEach(g => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "cell" + (g === el.grade.value ? " on" : "");
-      b.setAttribute("aria-label", GRADES[g] + " R" + boardPrice(g).toFixed(2) + " per litre, use this fuel");
-      b.innerHTML = '<span class="g">' + SHORT[g] + '</span><span class="p">' + boardPrice(g).toFixed(2) + '</span>';
-      b.onclick = () => { el.grade.value = g; state.priceCustom = false; syncPrice(); renderBoard(); calc(); save(); };
-      el.prices.append(b);
-    });
-    $("reg-coastal").setAttribute("aria-pressed", state.region === "coastal");
-    $("reg-inland").setAttribute("aria-pressed", state.region === "inland");
-    $("board-foot").textContent = "Prices from " + P.effective_label + ". " +
-      (state.region === "coastal" ? "Coastal = Cape Town, Durban, Gqeberha and nearby." : "Inland = Gauteng and the interior.") +
-      " Diesel varies a little by garage.";
-  }
-  function syncPrice(){
-    if (!state.priceCustom) el.price.value = boardPrice(el.grade.value).toFixed(2);
-    $("price-msg").innerHTML = state.priceCustom
-      ? 'Using your own price. <button type="button" class="linkish" id="reset-price">Use pump price</button>'
-      : GRADES[el.grade.value] + ", " + state.region + " pump price. Type over it if your garage charges something else.";
-    const r = $("reset-price"); if (r) r.onclick = () => { state.priceCustom = false; syncPrice(); calc(); };
-  }
-  function setRegion(r){
-    state.region = r;
-    if (el.grade.value === "93" && r === "coastal") el.grade.value = "95";
-    else if (el.grade.value === "95" && r === "inland") el.grade.value = "93";
-    state.priceCustom = false; renderBoard(); syncPrice(); calc(); save();
-  }
-  $("reg-coastal").onclick = () => setRegion("coastal");
-  $("reg-inland").onclick = () => setRegion("inland");
-
-  // ---------- car pickers ----------
-  const makes = [...new Set(CARS.map(c => c[0]))].sort();
-  el.make.innerHTML = makes.map(m => `<option>${m}</option>`).join("") + `<option value="${OTHER}">Not listed…</option>`;
-  function fillModels(){
-    const m = el.make.value, other = m === OTHER;
-    $("other-wrap").hidden = !other;
-    el.model.disabled = other;
-    el.model.innerHTML = other ? '<option>Type the fuel use below</option>'
-      : CARS.filter(c => c[0] === m).map(c => `<option>${c[1]}</option>`).join("");
-  }
-  function defaultGradeFor(fuel){ return fuel === "diesel" ? "d50" : (state.region === "coastal" ? "95" : "93"); }
-  function applyListCar(){
-    const c = CARS.find(c => c[0] === el.make.value && c[1] === el.model.value);
-    if (!c) return;
-    el.l100.value = c[3]; el.grade.value = defaultGradeFor(c[2]);
-    state.carLabel = c[0] + " " + c[1]; state.priceCustom = false;
-    renderBoard(); syncPrice(); carInfo(); calc(); save();
-  }
-  function carInfo(){
-    const label = el.make.value === OTHER ? $("other-q").value.trim() : state.carLabel;
-    $("carinfo").innerHTML = el.l100.value
-      ? (label ? "<b>" + esc(label) + "</b> uses" : "Uses") + " about <b>" + num(el.l100.value,1) + " l/100 km</b>."
-        + (el.make.value === OTHER ? " Check the owner's manual or trip computer for the real figure." : "")
-      : "Type the car's fuel use in l/100 km.";
-  }
-  el.make.onchange = () => { fillModels(); if (el.make.value !== OTHER) applyListCar(); else { state.carLabel = ""; carInfo(); calc(); save(); } };
-  el.model.onchange = applyListCar;
-  $("other-q").oninput = () => { carInfo(); calc(); save(); };
-  el.l100.oninput = () => { carInfo(); calc(); save(); };
-  el.grade.onchange = () => { state.priceCustom = false; renderBoard(); syncPrice(); calc(); save(); };
-  el.price.oninput = () => { state.priceCustom = true; syncPrice(); calc(); };
-  el.km.addEventListener("input", () => { state.kmSource = "typed"; calc(); save(); });
-  [el.ret, el.load].forEach(i => i.addEventListener("input", () => { calc(); save(); }));
-
-  // ---------- map ----------
-  let map = null, markers = {}, line = null;
-  function initMap(){
-    if (!window.L) { $("map").hidden = true; return; }
-    map = L.map("map", { zoomControl:true, attributionControl:true, scrollWheelZoom:false }).setView([-30.5, 24.5], 5);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-  }
-  function pinIcon(letter){
-    return L.divIcon({ className:"", iconSize:[30,30], iconAnchor:[15,15],
-      html:'<div style="width:30px;height:30px;border-radius:50%;background:#0c6a3c;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font:700 15px Barlow Condensed,Arial,sans-serif">'+letter+'</div>' });
-  }
-  function drawPins(){
-    if (!map) return;
-    ["from","to"].forEach(k => {
-      const p = state.pts[k];
-      if (markers[k]) { map.removeLayer(markers[k]); markers[k] = null; }
-      if (!p) return;
-      const m = L.marker([p.lat, p.lon], { icon: pinIcon(k === "from" ? "A" : "B"), draggable:true, title:"Drag to adjust" }).addTo(map);
-      m.on("dragend", async () => {
-        const ll = m.getLatLng();
-        state.pts[k] = { lat:ll.lat, lon:ll.lng, label:"Pin moved on map" };
-        showFound(k, "Looking up the spot…");
-        const r = await reverse(ll.lat, ll.lng);
-        if (r) { state.pts[k].label = r; $(k).value = r; }
-        showFound(k); route();
-      });
-      markers[k] = m;
-    });
-  }
-  function fit(){
-    if (!map) return;
-    const pts = ["from","to"].map(k => state.pts[k]).filter(Boolean).map(p => [p.lat,p.lon]);
-    if (line) map.fitBounds(line.getBounds(), { padding:[24,24] });
-    else if (pts.length === 2) map.fitBounds(pts, { padding:[24,24] });
-    else if (pts.length === 1) map.setView(pts[0], 14);
-  }
-
-  // ---------- geocoding (Photon, OpenStreetMap data) ----------
-  const BBOX = "11.5,-35.5,41,-16.5"; // southern Africa
-  function labelOf(pr){
-    const line1 = [pr.housenumber, pr.street].filter(Boolean).join(" ") || pr.name || "";
-    const nameFirst = pr.name && pr.street && pr.name !== pr.street ? pr.name : "";
-    const area = [pr.district || pr.locality, pr.city || pr.county, pr.state].filter(Boolean);
-    const uniq = [...new Set(area)].filter(a => a !== line1);
-    return { a: nameFirst ? nameFirst : line1 || uniq.shift() || "Unnamed place",
-             b: (nameFirst ? [line1, ...uniq] : uniq).filter(Boolean).join(", ") };
-  }
-  async function search(q, signal){
-    const near = state.pts.from || { lat:-30.5, lon:24.5 };
-    const url = "https://photon.komoot.io/api/?limit=6&lang=en&bbox=" + BBOX +
-      "&lat=" + near.lat.toFixed(3) + "&lon=" + near.lon.toFixed(3) + "&q=" + encodeURIComponent(q);
-    const r = await fetch(url, { signal });
-    if (!r.ok) throw new Error("search " + r.status);
-    const j = await r.json();
-    return (j.features || []).map(f => {
-      const l = labelOf(f.properties);
-      return { lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0], a:l.a, b:l.b,
-        exact: !!f.properties.housenumber, label: l.a + (l.b ? ", " + l.b : "") };
-    });
-  }
-  async function reverse(lat, lon){
-    try{
-      const r = await fetch("https://photon.komoot.io/reverse?lang=en&lat=" + lat + "&lon=" + lon);
-      const j = await r.json(); const f = (j.features||[])[0];
-      if (!f) return null;
-      const l = labelOf(f.properties); return l.a + (l.b ? ", " + l.b : "");
-    }catch(e){ return null; }
-  }
-  function showFound(k, text, warn){
-    const box = $("found-" + k);
-    box.classList.toggle("warn", !!warn);
-    if (text != null){ box.textContent = text; return; }
-    const p = state.pts[k];
-    box.innerHTML = p ? "Pinned: <b>" + esc(p.label) + "</b>" + (p.approx ? " (street found, not the exact house number — drag the pin on the map if needed)" : "") : "";
-  }
-
-  function setupAddress(k){
-    const input = $(k), list = $("sugg-" + k);
-    let ctl = null, timer = null, items = [], active = -1;
-    function close(){ list.hidden = true; active = -1; input.setAttribute("aria-expanded","false"); }
-    function render(){
-      list.innerHTML = "";
-      if (!items.length){ close(); return; }
-      items.forEach((it, i) => {
-        const li = document.createElement("li");
-        li.setAttribute("role","option"); li.setAttribute("aria-selected", i === active);
-        li.innerHTML = '<span class="a">' + esc(it.a) + '</span>' + (it.b ? '<span class="b">' + esc(it.b) + '</span>' : '');
-        li.onmousedown = e => e.preventDefault();
-        li.onclick = () => pick(it);
-        list.append(li);
-      });
-      list.hidden = false; input.setAttribute("aria-expanded","true");
-    }
-    function pick(it){
-      const typedNumber = (input.value.match(/^\s*(\d+[a-z]?)\s/i) || [])[1];
-      state.pts[k] = { lat:it.lat, lon:it.lon, label:it.label, approx: !!typedNumber && !it.exact };
-      input.value = it.label; items = []; close();
-      showFound(k); drawPins(); route(); save();
-    }
-    async function lookup(q){
-      if (ctl) ctl.abort(); ctl = new AbortController();
-      try{
-        items = await search(q, ctl.signal); active = -1; render();
-        if (!items.length) showFound(k, "No match yet. Try adding the suburb or town.", true);
-        else showFound(k, state.pts[k] ? null : "");
-      }catch(e){ if (e.name !== "AbortError") showFound(k, "Couldn't reach the address search. Check your connection.", true); }
-    }
-    input.addEventListener("input", () => {
-      state.pts[k] = null; showFound(k, ""); drawPins(); clearRoute(); save();
-      clearTimeout(timer);
-      const q = input.value.trim();
-      if (q.length < 3){ items = []; close(); return; }
-      timer = setTimeout(() => lookup(q), 300);
-    });
-    input.addEventListener("keydown", e => {
-      if (e.key === "ArrowDown" && items.length){ active = Math.min(active+1, items.length-1); render(); e.preventDefault(); }
-      else if (e.key === "ArrowUp" && items.length){ active = Math.max(active-1, 0); render(); e.preventDefault(); }
-      else if (e.key === "Enter"){ e.preventDefault(); if (items.length) pick(items[Math.max(active,0)]); }
-      else if (e.key === "Escape") close();
-    });
-    input.addEventListener("blur", () => setTimeout(close, 150));
-    input.addEventListener("focus", () => { if (items.length) render(); });
-  }
-  setupAddress("from"); setupAddress("to");
-
-  // ---------- GPS ----------
-  const gps = $("gps");
-  if (!("geolocation" in navigator)) gps.hidden = true;
-  gps.onclick = () => {
-    gps.disabled = true; showFound("from","Finding where you are…");
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const { latitude:lat, longitude:lon } = pos.coords;
-      const label = (await reverse(lat, lon)) || "Your current location";
-      state.pts.from = { lat, lon, label }; $("from").value = label;
-      showFound("from"); drawPins(); route(); save(); gps.disabled = false;
-    }, err => {
-      gps.disabled = false;
-      showFound("from", err.code === 1 ? "Location is switched off for this site. Allow it in your browser settings, or type the address." : "Couldn't get your location. Type the address instead.", true);
-    }, { enableHighAccuracy:true, timeout:15000, maximumAge:60000 });
-  };
-
-  // ---------- routing (OSRM) ----------
-  let routeCtl = null;
-  function clearRoute(){
-    if (line && map){ map.removeLayer(line); } line = null;
-    state.geom = null; state.duration = null;
-    $("routeinfo").innerHTML = "";
-  }
-  async function route(){
-    clearRoute();
-    const a = state.pts.from, b = state.pts.to;
-    fit();
-    if (!a || !b) return;
-    if (routeCtl) routeCtl.abort(); routeCtl = new AbortController();
-    const msg = $("route-msg"); msg.hidden = false; msg.className = "note"; msg.textContent = "Working out the road route…";
-    try{
-      const url = "https://router.project-osrm.org/route/v1/driving/" + a.lon + "," + a.lat + ";" + b.lon + "," + b.lat + "?overview=full&geometries=geojson";
-      const r = await fetch(url, { signal: routeCtl.signal });
-      const j = await r.json();
-      if (j.code !== "Ok" || !j.routes || !j.routes[0]) throw new Error(j.code || "no route");
-      const rt = j.routes[0];
-      state.geom = rt.geometry.coordinates; state.duration = rt.duration;
-      const km = rt.distance / 1000;
-      el.km.value = km < 20 ? km.toFixed(1) : Math.round(km);
-      state.kmSource = "route";
-      $("routeinfo").innerHTML = "Road distance <b>" + num(km, km < 20 ? 1 : 0) + " km</b> · about <b>" + hm(rt.duration) + "</b> driving";
-      msg.hidden = true;
-      if (map){
-        line = L.geoJSON(rt.geometry, { style:{ color:"#0c6a3c", weight:5, opacity:.85 } }).addTo(map);
-        fit();
-      }
-      calc(); save();
-    }catch(e){
-      if (e.name === "AbortError") return;
-      msg.className = "note warn";
-      msg.textContent = "Couldn't get a road route between those two points. Check both addresses, or type the distance in below.";
-    }
-  }
-
-  // ---------- result ----------
-  function calc(){
-    const km1 = parseFloat(el.km.value), l100 = parseFloat(el.l100.value), price = parseFloat(el.price.value);
-    if (!(km1 > 0) || !(l100 > 0) || !(price > 0)){
-      el.result.innerHTML = '<div class="empty">Fill in the trip and the car to see the cost.</div>';
-      return;
-    }
-    const km = km1 * (el.ret.checked ? 2 : 1);
-    const litres = km * l100 / 100 * (el.load.checked ? 1.15 : 1);
-    const cost = litres * price;
-    const short = s => (s || "").split(",")[0].trim();
-    const f = short(state.pts.from && state.pts.from.label) || short($("from").value) || "Start";
-    const t = short(state.pts.to && state.pts.to.label) || short($("to").value) || "Destination";
-    const carLabel = el.make.value === OTHER ? $("other-q").value.trim() : state.carLabel;
-    el.result.innerHTML =
-      '<div class="dest"><span>' + esc(f) + ' ' + (el.ret.checked ? '⇄' : '→') + ' ' + esc(t) + '</span><span class="km">' + num(km, km < 20 ? 1 : 0) + ' km</span></div>' +
-      '<div class="total">R ' + money(cost) + '<small>' + (el.ret.checked ? 'there &amp; back' : 'one way') + '</small></div>' +
-      '<div class="facts">' +
-        '<div><span>Fuel needed</span><b>' + num(litres,1) + ' l</b></div>' +
-        '<div><span>Per km</span><b>R ' + (cost/km).toFixed(2) + '</b></div>' +
-        '<div><span>Price used</span><b>R ' + price.toFixed(2) + '/l</b></div>' +
-      '</div>' +
-      '<p class="basis">' + (carLabel ? esc(carLabel) + ' · ' : '') + num(l100,1) + ' l/100 km · ' + GRADES[el.grade.value] +
-        (el.load.checked ? ' · loaded/towing +15%' : '') + '</p>';
-    markDirty();
-  }
-
-  // ---------- approve & save ----------
-  const ap = { name:$("trip-name"), vehicle:$("trip-vehicle"), driver:$("trip-driver"), btn:$("approve-btn"), line:$("saved-line") };
-  let savedSig = null;
-  function placeShort(k){
-    const p = state.pts[k];
-    return ((p && p.label) || $(k).value || "").split(",")[0].trim();
-  }
-  function defaultName(){
-    const f = placeShort("from"), t = placeShort("to");
-    return f && t ? f + (el.ret.checked ? " ⇄ " : " → ") + t : "Trip";
-  }
-  function current(){
-    const km1 = parseFloat(el.km.value), l100 = parseFloat(el.l100.value), price = parseFloat(el.price.value);
-    if (!(km1 > 0) || !(l100 > 0) || !(price > 0)) return null;
-    const km = km1 * (el.ret.checked ? 2 : 1);
-    const litres = km * l100 / 100 * (el.load.checked ? 1.15 : 1);
-    const carLabel = el.make.value === OTHER ? $("other-q").value.trim() : state.carLabel;
-    return { km1, km, litres, l100, price, cost: litres * price, carLabel };
-  }
-  function sig(){
-    const c = current();
-    return c ? [c.km, c.l100, c.price, el.grade.value, el.ret.checked, el.load.checked, placeShort("from"), placeShort("to")].join("|") : null;
-  }
-  function markDirty(){
-    if (!ap.btn) return;
-    const c = current();
-    ap.name.placeholder = defaultName();
-    if (!ap.vehicle.value) ap.vehicle.placeholder = (c && c.carLabel) || "e.g. White Hilux";
-    const done = savedSig && savedSig === sig();
-    ap.btn.disabled = !c || done;
-    ap.line.hidden = !done;
-  }
-  [ap.name, ap.vehicle, ap.driver].forEach(i => i.addEventListener("input", () => { savedSig = null; markDirty(); }));
-
-  // Fill name suggestions from earlier trips
-  function loadSuggestions(){
-    TripStore.all().then(list => {
-      const uniq = key => [...new Set(list.map(t => (t[key] || "").trim()).filter(Boolean))].sort();
-      $("vehicles-list").innerHTML = uniq("vehicle").map(v => `<option value="${esc(v)}">`).join("");
-      $("drivers-list").innerHTML = uniq("driver").map(v => `<option value="${esc(v)}">`).join("");
-      const b = $("trip-count"); if (b) b.textContent = list.length ? String(list.length) : "";
-    }).catch(() => {});
-  }
-
-  // Map snapshot drawn onto a canvas: OpenStreetMap tiles, the route, pins, and a road-sign strip
-  function lonX(lon, z){ return (lon + 180) / 360 * 256 * Math.pow(2, z); }
-  function latY(lat, z){ const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 256 * Math.pow(2, z); }
-  function loadTile(url){
-    return new Promise(res => {
-      const img = new Image(); img.crossOrigin = "anonymous";
-      const t = setTimeout(() => res(null), 8000);
-      img.onload = () => { clearTimeout(t); res(img); };
-      img.onerror = () => { clearTimeout(t); res(null); };
-      img.src = url;
-    });
-  }
-  async function drawSnapshot(trip, withTiles){
-    const W = 800, H = 450, MH = 360;
-    const c = document.createElement("canvas"); c.width = W; c.height = H;
-    const g = c.getContext("2d");
-    g.fillStyle = "#e4ebe6"; g.fillRect(0, 0, W, MH);
-    const pts = (trip.geometry && trip.geometry.length > 1) ? trip.geometry
-      : [trip.from, trip.to].filter(p => p && isFinite(p.lat)).map(p => [p.lat, p.lon]);
-    if (pts.length){
-      let z = 16;
-      for (; z > 2; z--){
-        const xs = pts.map(p => lonX(p[1], z)), ys = pts.map(p => latY(p[0], z));
-        if (Math.max(...xs) - Math.min(...xs) <= W - 110 && Math.max(...ys) - Math.min(...ys) <= MH - 90) break;
-      }
-      const xs = pts.map(p => lonX(p[1], z)), ys = pts.map(p => latY(p[0], z));
-      const ox = (Math.max(...xs) + Math.min(...xs)) / 2 - W / 2, oy = (Math.max(...ys) + Math.min(...ys)) / 2 - MH / 2;
-      if (withTiles){
-        const n = Math.pow(2, z), jobs = []; let got = 0;
-        for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++)
-          for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + MH) / 256); ty++){
-            if (ty < 0 || ty >= n) continue;
-            const wx = ((tx % n) + n) % n;
-            jobs.push(loadTile(`https://tile.openstreetmap.org/${z}/${wx}/${ty}.png`).then(img => { if (img){ got++; g.drawImage(img, tx * 256 - ox, ty * 256 - oy); } }));
-          }
-        await Promise.all(jobs);
-        if (!got) withTiles = false;
-        else { g.fillStyle = "rgba(255,255,255,.12)"; g.fillRect(0, 0, W, MH); }
-      }
-      const P2 = p => [lonX(p[1], z) - ox, latY(p[0], z) - oy];
-      if (pts.length > 1 && trip.geometry){
-        g.lineJoin = "round"; g.lineCap = "round";
-        [["#ffffff", 10], ["#0c6a3c", 5.5]].forEach(([col, w]) => {
-          g.strokeStyle = col; g.lineWidth = w; g.beginPath();
-          pts.forEach((p, i) => { const [x, y] = P2(p); i ? g.lineTo(x, y) : g.moveTo(x, y); });
-          g.stroke();
-        });
-      }
-      [[trip.from, "A"], [trip.to, "B"]].forEach(([p, l]) => {
-        if (!p || !isFinite(p.lat)) return;
-        const [x, y] = P2([p.lat, p.lon]);
-        g.beginPath(); g.arc(x, y, 15, 0, Math.PI * 2); g.fillStyle = "#0c6a3c"; g.fill();
-        g.lineWidth = 3; g.strokeStyle = "#fff"; g.stroke();
-        g.fillStyle = "#fff"; g.font = "700 17px 'Barlow Condensed', Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-        g.fillText(l, x, y + 1);
-      });
-      if (withTiles){
-        g.font = "500 12px Barlow, Arial, sans-serif"; g.textAlign = "right"; g.textBaseline = "bottom";
-        const at = "© OpenStreetMap contributors", tw = g.measureText(at).width;
-        g.fillStyle = "rgba(255,255,255,.85)"; g.fillRect(W - tw - 14, MH - 22, tw + 14, 22);
-        g.fillStyle = "#333"; g.fillText(at, W - 7, MH - 5);
-      }
-    }
-    // Road-sign strip
-    g.fillStyle = "#0c6a3c"; g.fillRect(0, MH, W, H - MH);
-    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 2; g.strokeRect(8, MH + 8, W - 16, H - MH - 16);
-    g.fillStyle = "#fff"; g.textBaseline = "alphabetic";
-    g.textAlign = "right"; g.font = "700 46px 'Barlow Condensed', Arial, sans-serif";
-    const costTxt = "R " + money(trip.cost); g.fillText(costTxt, W - 24, MH + 62);
-    const cw = g.measureText(costTxt).width;
-    g.textAlign = "left"; g.font = "700 26px 'Barlow Condensed', Arial, sans-serif";
-    let title = trip.name.toUpperCase();
-    const maxW = W - 48 - cw - 24;
-    while (g.measureText(title).width > maxW && title.length > 4) title = title.slice(0, -2).trimEnd() + "…";
-    g.fillText(title, 24, MH + 44);
-    g.font = "500 17px Barlow, Arial, sans-serif"; g.globalAlpha = .9;
-    const sub = [num(trip.km, trip.km < 20 ? 1 : 0) + " km", num(trip.litres, 1) + " l", trip.vehicle, new Date(trip.savedAt).toLocaleDateString("en-ZA", { day:"numeric", month:"short", year:"numeric" })].filter(Boolean).join("  ·  ");
-    let s2 = sub; while (g.measureText(s2).width > maxW && s2.length > 4) s2 = s2.slice(0, -2).trimEnd() + "…";
-    g.fillText(s2, 24, MH + 70); g.globalAlpha = 1;
-    return await new Promise((res, rej) => { try{ c.toBlob(b => b ? res(b) : rej(new Error("blob")), "image/jpeg", 0.85); }catch(e){ rej(e); } });
-  }
-  async function snapshot(trip){
-    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
-    try{ return await drawSnapshot(trip, true); }
-    catch(e){ try{ return await drawSnapshot(trip, false); }catch(e2){ return null; } }  // tiles blocked: draw without them
-  }
-  function simplify(coords){
-    if (!coords || coords.length < 2) return null;
-    const step = Math.max(1, Math.ceil(coords.length / 400)), out = [];
-    for (let i = 0; i < coords.length; i += step) out.push([+coords[i][1].toFixed(5), +coords[i][0].toFixed(5)]);
-    const last = coords[coords.length - 1]; out.push([+last[1].toFixed(5), +last[0].toFixed(5)]);
-    return out;
-  }
-  function toast(html, ms){
-    document.querySelectorAll(".toast").forEach(t => t.remove());
-    const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); t.innerHTML = html;
-    document.body.append(t); setTimeout(() => t.remove(), ms || 5000);
-  }
-
-  ap.btn.onclick = async () => {
-    const c = current(); if (!c) return;
-    ap.btn.disabled = true; const label = ap.btn.innerHTML;
-    ap.btn.textContent = "Saving…";
-    const pick = k => state.pts[k] ? { label: state.pts[k].label, lat: state.pts[k].lat, lon: state.pts[k].lon } : { label: $(k).value.trim() };
-    const trip = {
-      id: TripStore.newId(), savedAt: Date.now(),
-      name: ap.name.value.trim() || defaultName(),
-      vehicle: ap.vehicle.value.trim() || c.carLabel || "",
-      driver: ap.driver.value.trim(),
-      car: c.carLabel || "",
-      from: pick("from"), to: pick("to"),
-      kmOneWay: c.km1, km: c.km, returnTrip: el.ret.checked, loaded: el.load.checked,
-      durationSec: state.duration || null,
-      l100: c.l100, grade: el.grade.value, gradeLabel: GRADES[el.grade.value], region: state.region,
-      price: c.price, priceCustom: state.priceCustom, pricesFrom: P.effective_label,
-      litres: c.litres, cost: c.cost,
-      costs: { fuel: c.cost },   // room for service and running costs later
-      geometry: simplify(state.geom)
-    };
-    try{
-      trip.image = await snapshot(trip);
-      await TripStore.put(trip);
-      TripStore.persist();
-      savedSig = sig();
-      ap.line.innerHTML = '✓ Saved “' + esc(trip.name) + '” · <a href="trips.html">See past trips</a>';
-      ap.name.value = "";
-      loadSuggestions(); markDirty();
-      toast('Trip approved and saved <a href="trips.html">View</a>');
-    }catch(e){
-      toast("Couldn't save the trip on this phone. Check it isn't in private browsing mode.", 7000);
-      ap.btn.disabled = false;
-    }finally{
-      ap.btn.innerHTML = label; markDirty();
-    }
-  };
-
-  // ---------- start ----------
-  function restore(){
-    const s = load();
-    if (s){
-      state.region = s.region === "inland" ? "inland" : "coastal";
-      el.make.value = s.make || "Toyota"; fillModels();
-      if (s.make !== OTHER && s.model) el.model.value = s.model;
-      el.l100.value = s.l100 || ""; el.grade.value = s.grade || "d50";
-      state.pts = s.pts || { from:null, to:null };
-      $("from").value = s.fromText || ""; $("to").value = s.toText || "";
-      el.km.value = s.km || ""; el.ret.checked = !!s.ret; el.load.checked = !!s.load;
-      $("other-q").value = s.other || ""; state.carLabel = s.carLabel || "";
-    } else {
-      // Example trip so the page opens working — every field can be changed
-      el.make.value = "Toyota"; fillModels(); el.model.value = "Fortuner 2.8 GD-6";
-      el.l100.value = 9.3; el.grade.value = "d50"; state.carLabel = "Toyota Fortuner 2.8 GD-6";
-      state.pts = { from:{ lat:-33.9249, lon:18.4241, label:"Cape Town" }, to:{ lat:-33.9628, lon:22.4619, label:"George" } };
-      $("from").value = "Cape Town"; $("to").value = "George"; el.km.value = 430;
-    }
-  }
-  restore();
-  initMap();
-  renderBoard(); syncPrice(); carInfo(); calc();
-  showFound("from"); showFound("to"); drawPins();
-  if (state.pts.from && state.pts.to) route();
-  loadSuggestions();
-
-  // Load the latest prices (updated monthly)
-  fetch("prices.json", { cache:"no-store" }).then(r => r.ok ? r.json() : null).then(j => {
-    if (j && j.inland && j.coastal){ P = j; renderBoard(); syncPrice(); calc(); }
-  }).catch(() => {});
-})();
-</script>
+<script src="cars.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

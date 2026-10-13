@@ -121,6 +121,59 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
 .tabs a[aria-current="page"] .badge{background:rgba(255,255,255,.22);color:#fff}
 .badge:empty{display:none}
 
+/* ---------- Offline banner ---------- */
+.offline{background:var(--amber);color:#1a1205;font-size:.92rem;font-weight:500;padding:9px 16px;text-align:center}
+
+/* ---------- Saved places ---------- */
+.places{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.places-label{font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;width:100%}
+.placechip{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface);max-width:100%}
+.placechip button{all:unset;cursor:pointer;font-size:.9rem;font-weight:600;padding:7px 12px;color:var(--ink);max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.placechip button:hover{background:var(--hover)}
+.placechip button:focus-visible{outline:2px solid var(--sign);outline-offset:-2px}
+.placechip .to{border-left:1.5px solid var(--line);color:var(--sign-text);font-family:var(--digits);font-weight:400;padding:7px 10px}
+
+.star{all:unset;cursor:pointer;margin-left:auto;width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+.star[aria-pressed="true"]{color:var(--amber)}
+.star:hover{background:var(--hover)}
+.star:focus-visible{outline:2px solid var(--sign)}
+.star svg{width:20px;height:20px}
+.addr-label{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--muted)}
+.swapline{display:flex;justify-content:center;margin:-4px 0}
+.swap{font:inherit;font-size:.86rem;font-weight:600;color:var(--muted);background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.swap:hover{color:var(--ink)}
+.swap:focus-visible{outline:2px solid var(--sign);outline-offset:2px}
+.swap svg{width:15px;height:15px}
+
+/* ---------- Vehicle card & form ---------- */
+.vehcard{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.vehcard-facts{display:flex;flex-wrap:wrap;gap:10px 20px;flex:1;min-width:0}
+.vehcard-facts div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.vehcard-facts span{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.vehcard-facts b{font-family:var(--digits);font-weight:400;font-size:1rem;white-space:nowrap}
+.vehcard .hint{font-size:.82rem;color:var(--muted);width:100%}
+
+.vehform{background:var(--surface);border:1.5px solid var(--sign);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.vehform-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.04em}
+.vehform-actions{display:flex;gap:10px}
+.vehform-actions .btn{flex:1}
+.closex.small{width:30px;height:30px}
+.helper{border:1.5px solid var(--line);border-radius:10px;background:var(--bg)}
+.helper summary{cursor:pointer;padding:10px 12px;font-size:.92rem;font-weight:600;color:var(--sign-text);list-style:none}
+.helper summary::-webkit-details-marker{display:none}
+.helper summary::before{content:"＋ ";font-family:var(--digits)}
+.helper[open] summary::before{content:"－ "}
+.helper summary:focus-visible{outline:2px solid var(--sign);outline-offset:-2px}
+.helper-in{padding:0 12px 12px;display:flex;flex-direction:column;gap:10px}
+.helper-out{font-size:.95rem;color:var(--muted);padding:8px 0}
+.helper-out b{color:var(--ink);font-family:var(--digits);font-weight:400}
+
+/* ---------- Result split ---------- */
+.split{display:flex;gap:18px;flex-wrap:wrap;margin-top:-4px}
+.split div{display:flex;align-items:baseline;gap:6px}
+.split span{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;opacity:.85}
+.split b{font-family:var(--digits);font-weight:400;font-size:1.05rem}
+
 /* ---------- Buttons ---------- */
 .btn{font:inherit;font-weight:600;font-size:1rem;border-radius:10px;padding:12px 18px;cursor:pointer;border:1.5px solid var(--sign);background:var(--sign);color:var(--sign-ink);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.2}
 .btn.ghost{background:transparent;color:var(--sign)}
@@ -153,7 +206,9 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
 .summary div + div{border-left:1px solid var(--board-line)}
 .summary span{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.07em;font-size:.78rem;opacity:.85}
 .summary b{font-family:var(--digits);font-weight:400;color:var(--amber);font-size:1.35rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+.periods{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.periods::-webkit-scrollbar{display:none}
+.controls{display:grid;grid-template-columns:1fr minmax(0,11rem);gap:10px;align-items:end}
 .controls > *{min-width:0}
 .search{position:relative}
 .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
@@ -186,6 +241,30 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
 .del:hover{color:var(--danger);background:var(--hover)}
 .del:focus-visible{outline:2px solid var(--danger)}
 .del svg{width:18px;height:18px}
+
+/* ---------- Breakdown bars ---------- */
+.breakdown{display:flex;flex-direction:column;gap:12px}
+.bars{display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label value" "track track" "sub sub";gap:3px 10px;align-items:baseline}
+.bl{grid-area:label;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bv{grid-area:value;font-family:var(--display);font-weight:700;font-size:1.15rem;color:var(--sign-text);white-space:nowrap;font-variant-numeric:tabular-nums}
+.btrack{grid-area:track;height:8px;border-radius:999px;background:var(--hover);border:1px solid var(--line);overflow:hidden}
+.bfill{display:block;height:100%;background:var(--sign);border-radius:999px}
+.bn{grid-area:sub;font-size:.82rem;color:var(--muted);font-family:var(--digits)}
+
+/* ---------- Cost bar in trip detail ---------- */
+.costbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.costbar div{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.costbar span{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.costbar b{font-family:var(--digits);font-weight:400;font-size:1.05rem;white-space:nowrap}
+.costbar .tot{background:var(--sign);color:var(--sign-ink)}
+.costbar .tot span{color:rgba(255,255,255,.85)}
+
+/* ---------- Data tools ---------- */
+.databtns{display:flex;flex-wrap:wrap;gap:10px}
+.databtns .btn{flex:1 1 10rem}
+.backup-note{font-size:.9rem;color:var(--sign-text);font-weight:600;background:var(--sign-soft);border-radius:8px;padding:10px 12px}
+.backup-note.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
 
 .emptystate{background:var(--surface);border:1.5px dashed var(--line);border-radius:12px;padding:28px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
 .emptystate h2{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:0;font-size:1.35rem}
