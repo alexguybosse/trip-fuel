@@ -1,9 +1,9 @@
 /* Keeps the app openable without internet.
    Network first, so a new version pushed to GitHub always wins; the cache is only the fallback. */
-const CACHE = "trip-fuel-v3";
+const CACHE = "trip-fuel-v4";
 const SHELL = [
   "./", "index.html", "trips.html", "style.css", "app.js", "trips.js", "store.js", "cars.js",
-  "prices.json", "manifest.webmanifest", "icon.svg", "icon-180.png", "icon-192.png", "icon-512.png"
+  "prices.json", "manifest.webmanifest", "icon.svg", "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable.png"
 ];
 
 self.addEventListener("install", e => {

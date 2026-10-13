@@ -112,7 +112,9 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
 .topbar{position:sticky;top:0;z-index:1100;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
 .topbar-in{max-width:620px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:var(--display);font-weight:700;font-size:1.15rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);text-decoration:none}
-.brand i{display:inline-flex;width:26px;height:26px;border-radius:6px;background:var(--sign);color:var(--sign-ink);align-items:center;justify-content:center;font-style:normal;font-size:.95rem}
+.brand i{display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--sign);color:var(--sign-ink);align-items:center;justify-content:center;font-style:normal;flex:none}
+.brand i svg{width:72%;height:auto;fill:currentColor}
+.brand i svg .cut{fill:var(--sign)}
 .tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
 .tabs a{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.88rem;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .tabs a[aria-current="page"]{background:var(--sign);color:var(--sign-ink)}
