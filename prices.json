@@ -1,0 +1,7 @@
+{
+  "effective": "2026-10-07",
+  "effective_label": "7 October 2026",
+  "source": "Department of Mineral and Petroleum Resources monthly adjustment, as reported by TopAuto",
+  "inland":  { "93": 29.88, "95": 30.25, "d50": 33.29, "d500": 31.95 },
+  "coastal": { "93": 29.09, "95": 29.38, "d50": 32.03, "d500": 31.08 }
+}
