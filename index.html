@@ -13,120 +13,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<style>
-/* Layout: one phone-width column — dark forecourt price board, the trip (with a route map), the car, and a green road-sign result card. */
-:root{
-  --bg:#eef2ef; --surface:#ffffff; --ink:#15201a; --muted:#56665c; --line:#d2dbd4;
-  --sign:#0c6a3c; --sign-ink:#ffffff; --sign-soft:#e2efe7;
-  --board:#111814; --board-line:#2a352e; --amber:#f0a92a; --board-ink:#cfd8d2;
-  --warn:#9a4b00; --hover:#f3f7f4;
-  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
-  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --digits:"Share Tech Mono",ui-monospace,Menlo,Consolas,monospace;
-  color-scheme:light;
-}
-@media (prefers-color-scheme: dark){:root{
-  --bg:#0d1310; --surface:#151e19; --ink:#e7eee9; --muted:#97a89d; --line:#29352d;
-  --sign:#1b8150; --sign-ink:#ffffff; --sign-soft:#16291f;
-  --board:#070b09; --board-line:#26302a; --amber:#f5b53c; --board-ink:#c4cfc8;
-  --warn:#f0a35a; --hover:#1c2721; color-scheme:dark;
-}}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.wrap{max-width:620px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:22px}
-h1{font-family:var(--display);font-weight:700;font-size:2.1rem;line-height:1;margin:0;letter-spacing:.01em}
-.sub{color:var(--muted);margin:6px 0 0;font-size:.95rem}
-
-/* Pump board */
-.board{background:var(--board);color:var(--board-ink);border-radius:10px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:12px}
-.board-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.board-title{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:.95rem}
-.seg{display:inline-flex;border:1px solid var(--board-line);border-radius:999px;padding:2px}
-.seg button{all:unset;cursor:pointer;font-family:var(--display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.85rem;padding:5px 12px;border-radius:999px;color:var(--board-ink)}
-.seg button[aria-pressed="true"]{background:var(--amber);color:#1a1205}
-.seg button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-.prices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--board-line);border:1px solid var(--board-line);border-radius:6px;overflow:hidden}
-.cell{background:var(--board);padding:8px 6px 9px;text-align:center;cursor:pointer;border:0;color:inherit;font:inherit}
-.cell:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
-.cell .g{display:block;font-family:var(--display);font-weight:600;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase}
-.cell .p{display:block;font-family:var(--digits);color:var(--amber);font-size:1.45rem;line-height:1.15;margin-top:2px}
-.cell.on{box-shadow:inset 0 -3px 0 var(--amber)}
-.board-foot{font-size:.8rem;opacity:.8}
-
-/* Form groups */
-.group{display:flex;flex-direction:column;gap:12px}
-.group-h{font-family:var(--display);font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:.05em;margin:0;padding-bottom:6px;border-bottom:2px solid var(--ink)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.row > *{min-width:0}
-label.f,.f{display:flex;flex-direction:column;gap:5px;font-size:.88rem;font-weight:600;color:var(--muted)}
-input[type=text],input[type=search],input[type=number],select{font:inherit;font-size:1.05rem;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;min-width:0;-webkit-appearance:none;appearance:none}
-select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:32px}
-input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);box-shadow:0 0 0 3px var(--sign-soft)}
-.unit{position:relative}
-.unit input{padding-right:62px}
-.unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem;pointer-events:none}
-
-/* Address fields */
-.addr{position:relative;display:flex;flex-direction:column;gap:5px}
-.addr-line{display:flex;gap:8px}
-.addr-line input{flex:1}
-.addr .tag{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--sign);color:var(--sign-ink);font-family:var(--display);font-weight:700;font-size:.95rem;flex:none}
-.addr-label{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--muted)}
-.gps{font:inherit;font-size:.9rem;font-weight:600;border:1.5px solid var(--sign);background:transparent;color:var(--sign);border-radius:8px;padding:0 12px;cursor:pointer;white-space:nowrap}
-.gps:disabled{opacity:.55;cursor:wait}
-.gps:focus-visible{outline:2px solid var(--sign);outline-offset:2px}
-.found{font-size:.85rem;color:var(--muted);min-height:1.2em}
-.found b{color:var(--sign);font-weight:600}
-.found.warn{color:var(--warn)}
-.sugg{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:1000;background:var(--surface);border:1.5px solid var(--line);border-radius:8px;list-style:none;margin-block:4px 0;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:300px;overflow:auto}
-.sugg li{padding:9px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
-.sugg li[aria-selected="true"],.sugg li:hover{background:var(--hover)}
-.sugg .a{font-weight:600;color:var(--ink)}
-.sugg .b{font-size:.85rem;color:var(--muted)}
-
-#map{height:240px;border-radius:10px;border:1.5px solid var(--line);overflow:hidden;background:var(--surface)}
-.leaflet-container{font-family:var(--body)}
-.routeinfo{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.92rem;color:var(--muted)}
-.routeinfo b{color:var(--ink);font-family:var(--digits);font-weight:400}
-
-.checks{display:flex;flex-wrap:wrap;gap:10px}
-.chk{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:500}
-.chk input{width:20px;height:20px;accent-color:var(--sign)}
-.note{font-size:.88rem;color:var(--muted);margin:0}
-.note.warn{color:var(--warn)}
-.linkish{all:unset;cursor:pointer;color:var(--sign);font-weight:600;text-decoration:underline;text-underline-offset:2px}
-.linkish:focus-visible{outline:2px solid var(--sign)}
-.carinfo{font-size:.9rem;color:var(--muted);margin:0}
-.carinfo b{color:var(--ink);font-weight:600}
-
-/* Result: road sign */
-.sign{background:var(--sign);color:var(--sign-ink);border-radius:12px;padding:6px}
-.sign-in{border:2px solid rgba(255,255,255,.85);border-radius:8px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
-.dest{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:1.15rem;line-height:1.15;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
-.dest > span:first-child{min-width:0;overflow-wrap:anywhere}
-.dest .km{margin-left:auto;font-family:var(--digits);font-weight:400;letter-spacing:0;text-transform:none}
-.total{font-family:var(--display);font-weight:700;font-size:3.6rem;line-height:.95;font-variant-numeric:tabular-nums}
-.total small{font-size:1.1rem;font-weight:600;letter-spacing:.04em;margin-left:6px;opacity:.9}
-.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px solid rgba(255,255,255,.35);padding-top:10px}
-.facts div{display:flex;flex-direction:column;gap:1px}
-.facts span{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;opacity:.85}
-.facts b{font-family:var(--digits);font-weight:400;font-size:1.05rem}
-.basis{font-size:.82rem;opacity:.9;margin:0}
-.empty{font-family:var(--display);font-size:1.2rem;font-weight:600}
-.credit{font-size:.78rem;color:var(--muted);margin:0}
-.credit a{color:inherit}
-
-@media (max-width:440px){
-  .row{grid-template-columns:1fr}
-  .cell .p{font-size:1.15rem}
-  .total{font-size:3rem}
-  .facts{grid-template-columns:1fr 1fr}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<nav class="topbar" aria-label="Pages">
+  <div class="topbar-in">
+    <a class="brand" href="./" aria-label="Trip Fuel"><i>R</i><span>Trip Fuel</span></a>
+    <div class="tabs">
+      <a href="./" aria-current="page">Calculator</a>
+      <a href="trips.html">Past trips <span class="badge" id="trip-count"></span></a>
+    </div>
+  </div>
+</nav>
 <div class="wrap">
   <header>
     <h1>Trip Fuel Cost</h1>
@@ -215,11 +113,37 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
     <div class="sign-in" id="result"></div>
   </section>
 
+  <section class="approve" id="approve" aria-labelledby="h-approve">
+    <div class="approve-h">
+      <h2 id="h-approve">Approve this trip</h2>
+      <span>Saves it to Past trips with a map snapshot</span>
+    </div>
+    <div class="row3">
+      <label class="f">Trip name
+        <input type="text" id="trip-name" autocomplete="off" maxlength="80">
+      </label>
+      <label class="f">Vehicle
+        <input type="text" id="trip-vehicle" list="vehicles-list" autocomplete="off" maxlength="60" placeholder="e.g. White Hilux">
+      </label>
+      <label class="f">Driver (optional)
+        <input type="text" id="trip-driver" list="drivers-list" autocomplete="off" maxlength="60" placeholder="Name">
+      </label>
+    </div>
+    <datalist id="vehicles-list"></datalist>
+    <datalist id="drivers-list"></datalist>
+    <button type="button" class="btn big" id="approve-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      Approve &amp; save trip
+    </button>
+    <div class="saved-line" id="saved-line" hidden></div>
+  </section>
+
   <p class="note">Fuel use figures are typical real-world numbers. If you know what your car actually does, type it in. Prices change on the first Wednesday of each month and update here automatically. Tolls are not included.</p>
   <p class="credit">Addresses and routes from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, via Photon and OSRM.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="store.js"></script>
 <script>
 (function(){
   // Fallback prices if prices.json can't be loaded (kept in step with prices.json)
@@ -507,6 +431,7 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
   let routeCtl = null;
   function clearRoute(){
     if (line && map){ map.removeLayer(line); } line = null;
+    state.geom = null; state.duration = null;
     $("routeinfo").innerHTML = "";
   }
   async function route(){
@@ -522,6 +447,7 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
       const j = await r.json();
       if (j.code !== "Ok" || !j.routes || !j.routes[0]) throw new Error(j.code || "no route");
       const rt = j.routes[0];
+      state.geom = rt.geometry.coordinates; state.duration = rt.duration;
       const km = rt.distance / 1000;
       el.km.value = km < 20 ? km.toFixed(1) : Math.round(km);
       state.kmSource = "route";
@@ -563,7 +489,188 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
       '</div>' +
       '<p class="basis">' + (carLabel ? esc(carLabel) + ' · ' : '') + num(l100,1) + ' l/100 km · ' + GRADES[el.grade.value] +
         (el.load.checked ? ' · loaded/towing +15%' : '') + '</p>';
+    markDirty();
   }
+
+  // ---------- approve & save ----------
+  const ap = { name:$("trip-name"), vehicle:$("trip-vehicle"), driver:$("trip-driver"), btn:$("approve-btn"), line:$("saved-line") };
+  let savedSig = null;
+  function placeShort(k){
+    const p = state.pts[k];
+    return ((p && p.label) || $(k).value || "").split(",")[0].trim();
+  }
+  function defaultName(){
+    const f = placeShort("from"), t = placeShort("to");
+    return f && t ? f + (el.ret.checked ? " ⇄ " : " → ") + t : "Trip";
+  }
+  function current(){
+    const km1 = parseFloat(el.km.value), l100 = parseFloat(el.l100.value), price = parseFloat(el.price.value);
+    if (!(km1 > 0) || !(l100 > 0) || !(price > 0)) return null;
+    const km = km1 * (el.ret.checked ? 2 : 1);
+    const litres = km * l100 / 100 * (el.load.checked ? 1.15 : 1);
+    const carLabel = el.make.value === OTHER ? $("other-q").value.trim() : state.carLabel;
+    return { km1, km, litres, l100, price, cost: litres * price, carLabel };
+  }
+  function sig(){
+    const c = current();
+    return c ? [c.km, c.l100, c.price, el.grade.value, el.ret.checked, el.load.checked, placeShort("from"), placeShort("to")].join("|") : null;
+  }
+  function markDirty(){
+    if (!ap.btn) return;
+    const c = current();
+    ap.name.placeholder = defaultName();
+    if (!ap.vehicle.value) ap.vehicle.placeholder = (c && c.carLabel) || "e.g. White Hilux";
+    const done = savedSig && savedSig === sig();
+    ap.btn.disabled = !c || done;
+    ap.line.hidden = !done;
+  }
+  [ap.name, ap.vehicle, ap.driver].forEach(i => i.addEventListener("input", () => { savedSig = null; markDirty(); }));
+
+  // Fill name suggestions from earlier trips
+  function loadSuggestions(){
+    TripStore.all().then(list => {
+      const uniq = key => [...new Set(list.map(t => (t[key] || "").trim()).filter(Boolean))].sort();
+      $("vehicles-list").innerHTML = uniq("vehicle").map(v => `<option value="${esc(v)}">`).join("");
+      $("drivers-list").innerHTML = uniq("driver").map(v => `<option value="${esc(v)}">`).join("");
+      const b = $("trip-count"); if (b) b.textContent = list.length ? String(list.length) : "";
+    }).catch(() => {});
+  }
+
+  // Map snapshot drawn onto a canvas: OpenStreetMap tiles, the route, pins, and a road-sign strip
+  function lonX(lon, z){ return (lon + 180) / 360 * 256 * Math.pow(2, z); }
+  function latY(lat, z){ const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 256 * Math.pow(2, z); }
+  function loadTile(url){
+    return new Promise(res => {
+      const img = new Image(); img.crossOrigin = "anonymous";
+      const t = setTimeout(() => res(null), 8000);
+      img.onload = () => { clearTimeout(t); res(img); };
+      img.onerror = () => { clearTimeout(t); res(null); };
+      img.src = url;
+    });
+  }
+  async function drawSnapshot(trip, withTiles){
+    const W = 800, H = 450, MH = 360;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    g.fillStyle = "#e4ebe6"; g.fillRect(0, 0, W, MH);
+    const pts = (trip.geometry && trip.geometry.length > 1) ? trip.geometry
+      : [trip.from, trip.to].filter(p => p && isFinite(p.lat)).map(p => [p.lat, p.lon]);
+    if (pts.length){
+      let z = 16;
+      for (; z > 2; z--){
+        const xs = pts.map(p => lonX(p[1], z)), ys = pts.map(p => latY(p[0], z));
+        if (Math.max(...xs) - Math.min(...xs) <= W - 110 && Math.max(...ys) - Math.min(...ys) <= MH - 90) break;
+      }
+      const xs = pts.map(p => lonX(p[1], z)), ys = pts.map(p => latY(p[0], z));
+      const ox = (Math.max(...xs) + Math.min(...xs)) / 2 - W / 2, oy = (Math.max(...ys) + Math.min(...ys)) / 2 - MH / 2;
+      if (withTiles){
+        const n = Math.pow(2, z), jobs = []; let got = 0;
+        for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++)
+          for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + MH) / 256); ty++){
+            if (ty < 0 || ty >= n) continue;
+            const wx = ((tx % n) + n) % n;
+            jobs.push(loadTile(`https://tile.openstreetmap.org/${z}/${wx}/${ty}.png`).then(img => { if (img){ got++; g.drawImage(img, tx * 256 - ox, ty * 256 - oy); } }));
+          }
+        await Promise.all(jobs);
+        if (!got) withTiles = false;
+        else { g.fillStyle = "rgba(255,255,255,.12)"; g.fillRect(0, 0, W, MH); }
+      }
+      const P2 = p => [lonX(p[1], z) - ox, latY(p[0], z) - oy];
+      if (pts.length > 1 && trip.geometry){
+        g.lineJoin = "round"; g.lineCap = "round";
+        [["#ffffff", 10], ["#0c6a3c", 5.5]].forEach(([col, w]) => {
+          g.strokeStyle = col; g.lineWidth = w; g.beginPath();
+          pts.forEach((p, i) => { const [x, y] = P2(p); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+          g.stroke();
+        });
+      }
+      [[trip.from, "A"], [trip.to, "B"]].forEach(([p, l]) => {
+        if (!p || !isFinite(p.lat)) return;
+        const [x, y] = P2([p.lat, p.lon]);
+        g.beginPath(); g.arc(x, y, 15, 0, Math.PI * 2); g.fillStyle = "#0c6a3c"; g.fill();
+        g.lineWidth = 3; g.strokeStyle = "#fff"; g.stroke();
+        g.fillStyle = "#fff"; g.font = "700 17px 'Barlow Condensed', Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+        g.fillText(l, x, y + 1);
+      });
+      if (withTiles){
+        g.font = "500 12px Barlow, Arial, sans-serif"; g.textAlign = "right"; g.textBaseline = "bottom";
+        const at = "© OpenStreetMap contributors", tw = g.measureText(at).width;
+        g.fillStyle = "rgba(255,255,255,.85)"; g.fillRect(W - tw - 14, MH - 22, tw + 14, 22);
+        g.fillStyle = "#333"; g.fillText(at, W - 7, MH - 5);
+      }
+    }
+    // Road-sign strip
+    g.fillStyle = "#0c6a3c"; g.fillRect(0, MH, W, H - MH);
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 2; g.strokeRect(8, MH + 8, W - 16, H - MH - 16);
+    g.fillStyle = "#fff"; g.textBaseline = "alphabetic";
+    g.textAlign = "right"; g.font = "700 46px 'Barlow Condensed', Arial, sans-serif";
+    const costTxt = "R " + money(trip.cost); g.fillText(costTxt, W - 24, MH + 62);
+    const cw = g.measureText(costTxt).width;
+    g.textAlign = "left"; g.font = "700 26px 'Barlow Condensed', Arial, sans-serif";
+    let title = trip.name.toUpperCase();
+    const maxW = W - 48 - cw - 24;
+    while (g.measureText(title).width > maxW && title.length > 4) title = title.slice(0, -2).trimEnd() + "…";
+    g.fillText(title, 24, MH + 44);
+    g.font = "500 17px Barlow, Arial, sans-serif"; g.globalAlpha = .9;
+    const sub = [num(trip.km, trip.km < 20 ? 1 : 0) + " km", num(trip.litres, 1) + " l", trip.vehicle, new Date(trip.savedAt).toLocaleDateString("en-ZA", { day:"numeric", month:"short", year:"numeric" })].filter(Boolean).join("  ·  ");
+    let s2 = sub; while (g.measureText(s2).width > maxW && s2.length > 4) s2 = s2.slice(0, -2).trimEnd() + "…";
+    g.fillText(s2, 24, MH + 70); g.globalAlpha = 1;
+    return await new Promise((res, rej) => { try{ c.toBlob(b => b ? res(b) : rej(new Error("blob")), "image/jpeg", 0.85); }catch(e){ rej(e); } });
+  }
+  async function snapshot(trip){
+    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+    try{ return await drawSnapshot(trip, true); }
+    catch(e){ try{ return await drawSnapshot(trip, false); }catch(e2){ return null; } }  // tiles blocked: draw without them
+  }
+  function simplify(coords){
+    if (!coords || coords.length < 2) return null;
+    const step = Math.max(1, Math.ceil(coords.length / 400)), out = [];
+    for (let i = 0; i < coords.length; i += step) out.push([+coords[i][1].toFixed(5), +coords[i][0].toFixed(5)]);
+    const last = coords[coords.length - 1]; out.push([+last[1].toFixed(5), +last[0].toFixed(5)]);
+    return out;
+  }
+  function toast(html, ms){
+    document.querySelectorAll(".toast").forEach(t => t.remove());
+    const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); t.innerHTML = html;
+    document.body.append(t); setTimeout(() => t.remove(), ms || 5000);
+  }
+
+  ap.btn.onclick = async () => {
+    const c = current(); if (!c) return;
+    ap.btn.disabled = true; const label = ap.btn.innerHTML;
+    ap.btn.textContent = "Saving…";
+    const pick = k => state.pts[k] ? { label: state.pts[k].label, lat: state.pts[k].lat, lon: state.pts[k].lon } : { label: $(k).value.trim() };
+    const trip = {
+      id: TripStore.newId(), savedAt: Date.now(),
+      name: ap.name.value.trim() || defaultName(),
+      vehicle: ap.vehicle.value.trim() || c.carLabel || "",
+      driver: ap.driver.value.trim(),
+      car: c.carLabel || "",
+      from: pick("from"), to: pick("to"),
+      kmOneWay: c.km1, km: c.km, returnTrip: el.ret.checked, loaded: el.load.checked,
+      durationSec: state.duration || null,
+      l100: c.l100, grade: el.grade.value, gradeLabel: GRADES[el.grade.value], region: state.region,
+      price: c.price, priceCustom: state.priceCustom, pricesFrom: P.effective_label,
+      litres: c.litres, cost: c.cost,
+      costs: { fuel: c.cost },   // room for service and running costs later
+      geometry: simplify(state.geom)
+    };
+    try{
+      trip.image = await snapshot(trip);
+      await TripStore.put(trip);
+      TripStore.persist();
+      savedSig = sig();
+      ap.line.innerHTML = '✓ Saved “' + esc(trip.name) + '” · <a href="trips.html">See past trips</a>';
+      ap.name.value = "";
+      loadSuggestions(); markDirty();
+      toast('Trip approved and saved <a href="trips.html">View</a>');
+    }catch(e){
+      toast("Couldn't save the trip on this phone. Check it isn't in private browsing mode.", 7000);
+      ap.btn.disabled = false;
+    }finally{
+      ap.btn.innerHTML = label; markDirty();
+    }
+  };
 
   // ---------- start ----------
   function restore(){
@@ -590,6 +697,7 @@ input:focus-visible,select:focus-visible{outline:none;border-color:var(--sign);b
   renderBoard(); syncPrice(); carInfo(); calc();
   showFound("from"); showFound("to"); drawPins();
   if (state.pts.from && state.pts.to) route();
+  loadSuggestions();
 
   // Load the latest prices (updated monthly)
   fetch("prices.json", { cache:"no-store" }).then(r => r.ok ? r.json() : null).then(j => {

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Past Trips · Trip Fuel</title>
+<meta name="theme-color" content="#0c6a3c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trip Fuel">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230c6a3c'/%3E%3Ctext x='32' y='44' font-family='Arial' font-weight='700' font-size='30' fill='%23fff' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="topbar" aria-label="Pages">
+  <div class="topbar-in">
+    <a class="brand" href="./" aria-label="Trip Fuel"><i>R</i><span>Trip Fuel</span></a>
+    <div class="tabs">
+      <a href="./">Calculator</a>
+      <a href="trips.html" aria-current="page">Past trips <span class="badge" id="trip-count"></span></a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header>
+    <h1>Past Trips</h1>
+    <p class="sub">Every trip you've approved, with its route and fuel cost. Tap a trip to see the details.</p>
+  </header>
+
+  <section class="summary" aria-label="Totals">
+    <div><span>Trips</span><b id="s-count">0</b></div>
+    <div><span>Distance</span><b id="s-km">0 km</b></div>
+    <div><span>Fuel spend</span><b id="s-cost">R 0</b></div>
+  </section>
+
+  <section class="group" id="tools" aria-label="Sort and search">
+    <div class="controls">
+      <label class="f">Search
+        <span class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input type="search" id="q" placeholder="Trip, place, vehicle or driver" autocomplete="off">
+        </span>
+      </label>
+      <button type="button" class="btn quiet" id="export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        Export
+      </button>
+    </div>
+    <div class="sortchips" role="group" aria-label="Sort by" id="sorts">
+      <button type="button" class="chip" data-sort="new">Newest</button>
+      <button type="button" class="chip" data-sort="old">Oldest</button>
+      <button type="button" class="chip" data-sort="costhi">Most expensive</button>
+      <button type="button" class="chip" data-sort="costlo">Least expensive</button>
+      <button type="button" class="chip" data-sort="vehicle">Vehicle A–Z</button>
+      <button type="button" class="chip" data-sort="driver">Driver A–Z</button>
+      <button type="button" class="chip" data-sort="name">Trip A–Z</button>
+    </div>
+    <div class="listmeta"><span id="showing"></span></div>
+  </section>
+
+  <ul class="trips" id="list" aria-label="Saved trips"></ul>
+
+  <div class="emptystate" id="empty" hidden>
+    <h2>No saved trips yet</h2>
+    <p>Work out a trip on the calculator, then tap <b>Approve &amp; save trip</b>. It will show up here.</p>
+    <a class="btn" href="./">Go to the calculator</a>
+  </div>
+
+  <p class="note">Trips are saved on this phone or computer. They stay here until you delete them.</p>
+</div>
+
+<dialog class="sheet" id="sheet" aria-labelledby="d-name">
+  <div class="sheet-in" id="sheet-in"></div>
+</dialog>
+
+<script src="store.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const ICON = {
+    truck:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7"/><circle cx="7" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>',
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+    x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    img:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+    map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>'
+  };
+
+  let trips = [], urls = [], sort = "new";
+  try{ sort = localStorage.getItem("trip-fuel-sort") || "new"; }catch(e){}
+
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function num(v,d){ const n = Number(v); return isFinite(n) ? n.toLocaleString("en-ZA",{minimumFractionDigits:d,maximumFractionDigits:d}) : "–"; }
+  function money(v){ return Math.round(v).toLocaleString("en-ZA"); }
+  function when(ts, withTime){
+    const d = new Date(ts);
+    return d.toLocaleDateString("en-ZA",{ weekday: withTime ? "short" : undefined, day:"numeric", month:"short", year:"numeric" }) +
+      (withTime ? ", " + d.toLocaleTimeString("en-ZA",{ hour:"2-digit", minute:"2-digit" }) : "");
+  }
+  function hm(sec){ if (!sec) return ""; const m = Math.round(sec/60), h = Math.floor(m/60); return h ? h + " h " + String(m%60).padStart(2,"0") + " min" : m + " min"; }
+  function place(p){ return (p && p.label) || "—"; }
+  function short(p){ return place(p).split(",")[0].trim(); }
+  function url(blob){ if (!blob) return ""; const u = URL.createObjectURL(blob); urls.push(u); return u; }
+  function toast(html, ms, onAction){
+    document.querySelectorAll(".toast").forEach(t => t.remove());
+    const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); t.innerHTML = html;
+    const b = t.querySelector("button"); if (b && onAction) b.onclick = () => { t.remove(); onAction(); };
+    document.body.append(t); setTimeout(() => t.remove(), ms || 5000);
+  }
+
+  // ---------- sorting & filtering ----------
+  const byText = k => (a, b) => (a[k] || "~").localeCompare(b[k] || "~", "en", { sensitivity:"base" }) || b.savedAt - a.savedAt;
+  const SORTS = {
+    new: (a, b) => b.savedAt - a.savedAt,
+    old: (a, b) => a.savedAt - b.savedAt,
+    costhi: (a, b) => b.cost - a.cost,
+    costlo: (a, b) => a.cost - b.cost,
+    vehicle: byText("vehicle"), driver: byText("driver"), name: byText("name")
+  };
+  function visible(){
+    const q = $("q").value.trim().toLowerCase();
+    let list = trips.slice();
+    if (q) list = list.filter(t => [t.name, t.vehicle, t.driver, t.car, place(t.from), place(t.to)].join(" ").toLowerCase().includes(q));
+    return list.sort(SORTS[sort] || SORTS.new);
+  }
+
+  // ---------- render ----------
+  function render(){
+    urls.forEach(u => URL.revokeObjectURL(u)); urls = [];
+    document.querySelectorAll("#sorts .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.sort === sort));
+    const list = visible();
+    $("trip-count").textContent = trips.length ? String(trips.length) : "";
+    $("s-count").textContent = list.length;
+    $("s-km").textContent = num(list.reduce((s, t) => s + (t.km || 0), 0), 0) + " km";
+    $("s-cost").textContent = "R " + money(list.reduce((s, t) => s + (t.cost || 0), 0));
+    $("empty").hidden = trips.length > 0;
+    $("tools").hidden = trips.length === 0;
+    $("showing").textContent = trips.length === list.length ? trips.length + (trips.length === 1 ? " trip" : " trips")
+      : "Showing " + list.length + " of " + trips.length + " trips";
+    const ul = $("list"); ul.innerHTML = "";
+    if (trips.length && !list.length){
+      ul.innerHTML = '<li class="note">No trips match that search.</li>'; return;
+    }
+    list.forEach(t => {
+      const li = document.createElement("li");
+      li.className = "trip"; li.tabIndex = 0; li.setAttribute("role","button");
+      li.setAttribute("aria-label", t.name + ", R " + money(t.cost) + ", " + when(t.savedAt));
+      const img = url(t.image);
+      li.innerHTML =
+        '<div class="thumb">' + (img ? '<img src="' + img + '" alt="">' : '') + '</div>' +
+        '<div class="trip-body">' +
+          '<div class="trip-top"><span class="trip-name">' + esc(t.name) + '</span><span class="trip-cost">R ' + money(t.cost) + '</span></div>' +
+          '<div class="trip-route">' + esc(short(t.from)) + (t.returnTrip ? ' ⇄ ' : ' → ') + esc(short(t.to)) + '</div>' +
+          '<div class="trip-tags">' +
+            (t.vehicle ? '<span class="ttag">' + ICON.truck + esc(t.vehicle) + '</span>' : '') +
+            (t.driver ? '<span class="ttag">' + ICON.user + esc(t.driver) + '</span>' : '') +
+          '</div>' +
+          '<div class="trip-foot"><span><span class="nums">' + num(t.km, t.km < 20 ? 1 : 0) + ' km · ' + num(t.litres,1) + ' l</span> · ' + when(t.savedAt) + '</span>' +
+            '<button type="button" class="del" aria-label="Delete ' + esc(t.name) + '">' + ICON.trash + '</button></div>' +
+        '</div>';
+      li.querySelector(".del").onclick = e => { e.stopPropagation(); removeTrip(t); };
+      li.onclick = () => openTrip(t);
+      li.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openTrip(t); } };
+      ul.append(li);
+    });
+  }
+
+  // ---------- delete with undo ----------
+  async function removeTrip(t){
+    try{
+      await TripStore.remove(t.id);
+      trips = trips.filter(x => x.id !== t.id);
+      if ($("sheet").open) $("sheet").close();
+      render();
+      toast('Deleted “' + esc(t.name) + '” <button type="button">Undo</button>', 7000, async () => {
+        await TripStore.put(t); trips.push(t); render();
+      });
+    }catch(e){ toast("Couldn't delete that trip. Try again."); }
+  }
+
+  // ---------- trip detail ----------
+  function openTrip(t){
+    const img = url(t.image);
+    const gmaps = (t.from && t.from.lat != null && t.to && t.to.lat != null)
+      ? "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=" + t.from.lat + "," + t.from.lon + "&destination=" + t.to.lat + "," + t.to.lon
+      : "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=" + encodeURIComponent(place(t.from)) + "&destination=" + encodeURIComponent(place(t.to));
+    const fname = (t.name || "trip").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "trip";
+    $("sheet-in").innerHTML =
+      (img ? '<img class="sheet-img" src="' + img + '" alt="Route map for ' + esc(t.name) + '">' : '') +
+      '<div class="sheet-body">' +
+        '<div class="sheet-title"><div><h2 id="d-name">' + esc(t.name) + '</h2><div class="when">Approved ' + when(t.savedAt, true) + '</div></div>' +
+          '<button type="button" class="closex" id="d-close" aria-label="Close">' + ICON.x + '</button></div>' +
+        '<dl class="dl">' +
+          '<div class="wide"><dt>From</dt><dd>' + esc(place(t.from)) + '</dd></div>' +
+          '<div class="wide"><dt>To</dt><dd>' + esc(place(t.to)) + '</dd></div>' +
+          '<div><dt>Fuel cost</dt><dd class="num">R ' + num(t.cost, 2) + '</dd></div>' +
+          '<div><dt>Distance</dt><dd class="num">' + num(t.km, t.km < 20 ? 1 : 0) + ' km' + (t.returnTrip ? ' (there &amp; back)' : '') + '</dd></div>' +
+          '<div><dt>Vehicle</dt><dd>' + esc(t.vehicle || "—") + '</dd></div>' +
+          '<div><dt>Driver</dt><dd>' + esc(t.driver || "—") + '</dd></div>' +
+          '<div><dt>Fuel needed</dt><dd class="num">' + num(t.litres, 1) + ' l</dd></div>' +
+          '<div><dt>Fuel use</dt><dd class="num">' + num(t.l100, 1) + ' l/100 km</dd></div>' +
+          '<div><dt>Fuel</dt><dd>' + esc(t.gradeLabel || "") + ', ' + esc(t.region || "") + '</dd></div>' +
+          '<div><dt>Price</dt><dd class="num">R ' + num(t.price, 2) + '/l</dd></div>' +
+          (t.durationSec ? '<div><dt>Drive time</dt><dd>' + hm(t.durationSec * (t.returnTrip ? 2 : 1)) + '</dd></div>' : '') +
+          '<div' + (t.durationSec ? '' : ' class="wide"') + '><dt>Notes</dt><dd>' +
+            [t.car && t.car !== t.vehicle ? t.car : "", t.loaded ? "Loaded/towing +15%" : "", t.priceCustom ? "Own price" : (t.pricesFrom ? "Pump price of " + t.pricesFrom : "")].filter(Boolean).map(esc).join(" · ") +
+          '</dd></div>' +
+        '</dl>' +
+        '<div class="sheet-actions">' +
+          (img ? '<a class="btn quiet" href="' + img + '" download="' + fname + '.jpg">' + ICON.img + 'Save image</a>' : '') +
+          '<a class="btn quiet' + (img ? '' : ' full') + '" href="' + gmaps + '" target="_blank" rel="noopener">' + ICON.map + 'Open in Maps</a>' +
+          '<button type="button" class="btn danger full" id="d-del">' + ICON.trash + 'Delete trip</button>' +
+        '</div>' +
+        '<div class="confirm" id="d-confirm" hidden><p>Delete this trip?</p><div>' +
+          '<button type="button" class="btn quiet" id="d-no">Keep it</button><button type="button" class="btn danger" id="d-yes">Delete</button></div></div>' +
+      '</div>';
+    const dlg = $("sheet");
+    $("d-close").onclick = () => dlg.close();
+    $("d-del").onclick = () => { $("d-confirm").hidden = false; $("d-del").hidden = true; $("d-yes").focus(); };
+    $("d-no").onclick = () => { $("d-confirm").hidden = true; $("d-del").hidden = false; };
+    $("d-yes").onclick = () => removeTrip(t);
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+    $("d-close").focus();
+  }
+  $("sheet").addEventListener("click", e => { if (e.target === $("sheet")) $("sheet").close(); });
+
+  // ---------- export ----------
+  $("export").onclick = () => {
+    const rows = [["Approved","Trip","Vehicle","Driver","From","To","Distance km","There and back","Litres","Fuel use l/100km","Fuel","Region","Price R/l","Fuel cost R"]];
+    visible().forEach(t => rows.push([
+      new Date(t.savedAt).toISOString().slice(0,16).replace("T"," "), t.name, t.vehicle, t.driver, place(t.from), place(t.to),
+      Math.round(t.km*10)/10, t.returnTrip ? "Yes" : "No", Math.round(t.litres*10)/10, t.l100, t.gradeLabel, t.region, t.price, Math.round(t.cost*100)/100
+    ]));
+    const csv = rows.map(r => r.map(v => { const s = String(v == null ? "" : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }).join(",")).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type:"text/csv" }));
+    a.download = "trips-" + new Date().toISOString().slice(0,10) + ".csv";
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  };
+
+  // ---------- wire up ----------
+  document.querySelectorAll("#sorts .chip").forEach(c => c.onclick = () => {
+    sort = c.dataset.sort; try{ localStorage.setItem("trip-fuel-sort", sort); }catch(e){}
+    render();
+  });
+  $("q").addEventListener("input", render);
+
+  TripStore.all().then(list => { trips = list || []; render(); })
+    .catch(() => { trips = []; render(); toast("Couldn't open saved trips in this browser. Private browsing may be blocking it.", 8000); });
+})();
+</script>
+</body>
+</html>
